@@ -1,0 +1,48 @@
+name: IaC Misconfig Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Cloud Misconfiguration Hunter on samples
+        run: python hunter.py samples/
+
+      - name: Upload JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-report-json
+          path: reports/cloud_report.json
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-report-html
+          path: reports/cloud_report.html
+
+      - name: Show finding summary
+        run: |
+          python -c "
+          import json
+          r = json.load(open('reports/cloud_report.json'))
+          s = r['summary']
+          print(f\"Files scanned : {s['files_scanned']}\")
+          print(f\"Total findings: {s['total_findings']}\")
+          print(f\"By severity   : {s['by_severity']}\")
+          print(f\"By service    : {s['by_service']}\")
+          "
