@@ -1,12 +1,101 @@
 # ☁️ Cloud Misconfiguration Hunter
 
-A zero-dependency IaC security scanner that finds AWS misconfigurations in Terraform, CloudFormation, and raw JSON policies. Every finding is mapped to the **CIS AWS Foundations Benchmark** with a remediation hint and a severity-weighted risk score.
+> **Production-grade AWS IaC security scanner — zero dependencies, CIS-mapped, context-aware.**
+> A free, self-hosted alternative to Wiz, Prisma Cloud, Lacework, and Checkov Pro for teams that want cloud security without the enterprise price tag.
 
-## Why this matters
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](./.github/workflows/iac-scan.yml)
+[![CIS](https://img.shields.io/badge/CIS%20AWS-Benchmark%20mapped-1F4E79)](https://www.cisecurity.org/benchmark/amazon_web_services)
 
-Cloud misconfigurations are the #1 root cause of breaches — IBM Cost of a Data Breach 2024 put them at 15% of all incidents. Catching them **before** deployment is the cheapest place on the kill chain.
+---
 
-## Detections (15 rules)
+## What it does
+
+Scans Terraform, CloudFormation, and IAM policy JSON for AWS misconfigurations.
+Every finding maps to a **CIS AWS Foundations Benchmark** control with a
+remediation hint and a context-aware risk score (production vs. test).
+
+```
+============================================================
+  [Cloud Misconfiguration Hunter v1.0]
+============================================================
+[*] Files scanned : 2
+[*] Total findings: 19
+[*] By severity   : {'CRITICAL': 7, 'HIGH': 9, 'MEDIUM': 3, 'LOW': 0}
+[*] By service    : {'S3': 5, 'EC2': 4, 'RDS': 2, 'CloudTrail': 2, 'VPC': 1, 'IAM': 4, 'KMS': 1}
+
+[CRITICAL] IAM policy with wildcard Action + Resource (CIS AWS 1.16)
+   samples/iam_policy.json:6 (risk=90, service=IAM)
+   > "Action": "*"
+   ↳ Never grant Action:* + Resource:*. This is effectively AdministratorAccess.
+
+[CRITICAL] S3 bucket with public-read ACL (CIS AWS 2.1.5)
+   samples/main.tf:13 (risk=88, service=S3)
+   > acl = "public-read"
+   ↳ Set acl to 'private' and use bucket policies with explicit principals.
+```
+
+---
+
+## Why you want this
+
+Cloud misconfigurations are the #1 root cause of breaches — IBM's 2024 Cost of
+a Data Breach Report put them at 15% of all incidents. Catching them **before**
+deployment is the cheapest place on the kill chain.
+
+| | **Cloud Misconfig Hunter** | Wiz | Prisma Cloud | Checkov OSS |
+|---|---|---|---|---|
+| **Price** | Free (MIT) | $$$$ | $$$$ | Free |
+| **Runtime deps** | **None** — pure stdlib | Cloud platform | Cloud platform | Python + deps |
+| **Install time** | `git clone` | SaaS onboarding | SaaS onboarding | `pip install checkov` |
+| **Self-hosted** | Yes | No | Limited | Yes |
+| **CIS mapping** | Per rule | Yes | Yes | Yes |
+| **Interactive HTML report** | Bundled | Yes (SaaS) | Yes (SaaS) | No |
+| **Production vs test context** | Yes (built-in) | Yes | Yes | No |
+| **Extend with Python regex** | 5 lines | No | No | YAML DSL |
+
+---
+
+## 60-second quickstart
+
+```bash
+git clone https://github.com/CyberEnthusiastic/cloud-misconfig-hunter.git
+cd cloud-misconfig-hunter
+python hunter.py samples/
+start reports/cloud_report.html   # Windows ; open/xdg-open on Mac/Linux
+```
+
+### One-command installer
+
+```bash
+./install.sh          # Linux / macOS / WSL / Git Bash
+.\install.ps1         # Windows PowerShell
+```
+
+### Docker
+
+```bash
+docker build -t cloud-hunter .
+docker run --rm -v "$PWD:/app/target" cloud-hunter hunter.py target/samples/
+```
+
+---
+
+## Open in VS Code (2 clicks)
+
+```bash
+code .
+```
+
+Accept the extension prompt (Python, Pylance, YAML, Docker), then:
+- **F5** → debug-scan the bundled samples
+- **Ctrl+Shift+B** → default task (scan + open report)
+- The repo ships with `.vscode/launch.json` + `tasks.json` + `extensions.json` + `settings.json`.
+
+---
+
+## 15 CIS-mapped detection rules
 
 | ID | Rule | Severity | CIS |
 |----|------|----------|-----|
@@ -26,65 +115,34 @@ Cloud misconfigurations are the #1 root cause of breaches — IBM Cost of a Data
 | ROOT-001 | IAM user with AdministratorAccess | HIGH | 1.15 |
 | KMS-001 | KMS key rotation disabled | MEDIUM | 3.8 |
 
-## Quickstart
+---
 
-```bash
-git clone https://github.com/CyberEnthusiastic/cloud-misconfig-hunter.git
-cd cloud-misconfig-hunter
+## Context-aware risk scoring
 
-# Scan bundled samples (Terraform + IAM policy JSON)
-python hunter.py samples/
+- **Severity base** — CRITICAL 90, HIGH 70, MEDIUM 45, LOW 20
+- **Production boost** — `+8` if the file contains `prod` or `production`
+- **Test decay** — `−10` if the file contains `test`, `dev`, `example`, or `sandbox`
 
-# Open the HTML report
-start reports/cloud_report.html      # Windows
-open  reports/cloud_report.html      # macOS
-xdg-open reports/cloud_report.html   # Linux
-```
+A public S3 bucket in `prod-data.tf` scores 98; the same rule in `example/` scores 80.
+
+---
 
 ## Scan your own IaC
 
 ```bash
-# Single Terraform file
-python hunter.py infrastructure/main.tf
-
-# Entire directory (recursively picks up *.tf, *.json, *.yaml)
-python hunter.py ~/my-aws-infra/
-
-# Custom output paths
-python hunter.py ./iac -o reports/prod.json --html reports/prod.html
+python hunter.py infrastructure/main.tf        # single file
+python hunter.py ~/my-aws-infra/                # recursive (*.tf, *.json, *.yaml)
+python hunter.py ./iac -o prod.json --html prod.html
 ```
 
-## Risk scoring
-
-The risk score blends:
-
-- **Severity base** — CRITICAL 90, HIGH 70, MEDIUM 45, LOW 20
-- **Context boost** — `+8` if the file contains the word `prod` or `production`
-- **Context decay** — `−10` if the file contains `test`, `dev`, `example`, or `sandbox`
-
-That way, a public S3 bucket in `prod-data.tf` scores 98, the same rule in `example/` scores 80.
+---
 
 ## CI/CD integration
 
-```yaml
-# .github/workflows/iac-security.yml
-name: IaC Security
-on: [pull_request]
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-      - name: Run Cloud Misconfiguration Hunter
-        run: |
-          git clone https://github.com/CyberEnthusiastic/cloud-misconfig-hunter.git /tmp/hunter
-          python /tmp/hunter/hunter.py .
-      - name: Fail on critical
-        run: |
-          python -c "import json; r=json.load(open('reports/cloud_report.json')); exit(1 if r['summary']['by_severity']['CRITICAL']>0 else 0)"
-```
+See `.github/workflows/iac-scan.yml` — runs on every push/PR, uploads JSON +
+HTML reports as artifacts, and prints a severity summary to the Actions log.
+
+---
 
 ## Extending
 
@@ -102,18 +160,23 @@ Add a rule to `RULES` in `hunter.py`:
 },
 ```
 
+---
+
 ## Roadmap
 
 - [ ] HCL2 parser (beyond regex) for nested block accuracy
 - [ ] Azure ARM + GCP Deployment Manager support
 - [ ] SARIF output for GitHub code scanning
 - [ ] Auto-fix PR generation via GitHub Actions
-- [ ] Drift detection — compare deployed state vs IaC
+- [ ] Drift detection — deployed state vs IaC
 
-## License
+## License · Security · Contributing
 
-MIT
+- [LICENSE](./LICENSE) — MIT
+- [NOTICE](./NOTICE) — attribution
+- [SECURITY.md](./SECURITY.md) — vulnerability disclosure
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — how to add rules / send PRs
 
 ---
 
-Built by [CyberEnthusiastic](https://github.com/CyberEnthusiastic) · Part of the AI Security Projects series
+Built by **[Adithya Vasamsetti (CyberEnthusiastic)](https://github.com/CyberEnthusiastic)** as part of the [AI Security Projects](https://github.com/CyberEnthusiastic?tab=repositories) suite.

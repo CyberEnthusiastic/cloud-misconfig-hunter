@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Cloud: scan samples",
+      "type": "shell",
+      "command": "python hunter.py samples/",
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "Cloud: open HTML report",
+      "type": "shell",
+      "command": "start reports/cloud_report.html",
+      "windows": { "command": "start reports/cloud_report.html" },
+      "linux":   { "command": "xdg-open reports/cloud_report.html" },
+      "osx":     { "command": "open reports/cloud_report.html" }
+    }
+  ]
+}
