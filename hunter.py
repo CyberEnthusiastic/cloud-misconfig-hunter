@@ -254,6 +254,9 @@ class MisconfigHunter:
 
 
 def main():
+    from license_guard import verify_license, print_banner
+    verify_license()
+    print_banner("Cloud Misconfiguration Hunter")
     import argparse, sys
     # Force UTF-8 on Windows consoles so emoji and box chars render
     try:
