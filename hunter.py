@@ -9,7 +9,7 @@ import re
 import os
 import json
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import List, Dict
@@ -249,7 +249,7 @@ class MisconfigHunter:
             "total_findings": len(self.findings),
             "by_severity": by_sev,
             "by_service": by_svc,
-            "scanned_at": datetime.utcnow().isoformat() + "Z",
+            "scanned_at": datetime.now(tz=timezone.utc).isoformat(),
         }
 
 
