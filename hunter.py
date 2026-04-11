@@ -3,7 +3,7 @@ Cloud Misconfiguration Hunter
 Scans Terraform / CloudFormation / raw JSON for AWS security misconfigurations.
 Maps findings to CIS AWS Benchmark + AWS Well-Architected Security Pillar.
 
-Author: Adithya Vasamsetti (CyberEnthusiastic)
+Author: Mohith Vasamsetti (CyberEnthusiastic)
 """
 import re
 import os
