@@ -38,6 +38,20 @@ remediation hint and a context-aware risk score (production vs. test).
 
 ---
 
+## Screenshots (ran locally, zero setup)
+
+**Terminal output** - exactly what you see on the command line:
+
+![Terminal output](docs/screenshots/terminal.png)
+
+**Interactive HTML dashboard** - opens in any browser, dark-mode, filterable:
+
+![HTML report](docs/screenshots/report.png)
+
+Both screenshots are captured from a real local run against the bundled samples. Reproduce them with the quickstart commands below.
+
+---
+
 ## Why you want this
 
 Cloud misconfigurations are the #1 root cause of breaches — IBM's 2024 Cost of

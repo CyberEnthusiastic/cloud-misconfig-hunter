@@ -1,0 +1,112 @@
+
+  Cloud Misconfiguration Hunter v1.0
+  Copyright (c) 2026 Mohith Vasamsetti
+  https://github.com/CyberEnthusiastic
+  Licensed for personal use only. See LICENSE for terms.
+
+============================================================
+  [Cloud Misconfiguration Hunter v1.0]
+============================================================
+[*] Target: samples/
+[*] Files scanned : 2
+[*] Total findings: 19
+[*] By severity   : {'CRITICAL': 7, 'HIGH': 9, 'MEDIUM': 3, 'LOW': 0}
+[*] By service    : {'S3': 5, 'EC2': 4, 'RDS': 2, 'CloudTrail': 2, 'VPC': 1, 'IAM': 4, 'KMS': 1}
+
+[91m[CRITICAL][0m IAM policy with wildcard Resource (*) AND wildcard Action  (CIS AWS 1.16)
+   samples\iam_policy.json:6 (risk=90, service=IAM)
+   > "Effect": "Allow",
+   ↳ Never grant Action:* + Resource:*. This is effectively AdministratorAccess.
+
+[91m[CRITICAL][0m S3 bucket with public-read ACL  (CIS AWS 2.1.5)
+   samples\main.tf:13 (risk=88, service=S3)
+   > acl    = "public-read"
+   ↳ Set acl to 'private' and use bucket policies with explicit principals.
+
+[91m[CRITICAL][0m S3 bucket with public-read ACL  (CIS AWS 2.1.5)
+   samples\main.tf:25 (risk=88, service=S3)
+   > acl    = "public-read-write"
+   ↳ Set acl to 'private' and use bucket policies with explicit principals.
+
+[91m[CRITICAL][0m Security group open to 0.0.0.0/0 on SSH (22)  (CIS AWS 5.2)
+   samples\main.tf:34 (risk=88, service=EC2)
+   > from_port   = 22
+   ↳ Restrict SSH to specific bastion/VPN CIDRs. Never expose port 22 to the internet.
+
+[91m[CRITICAL][0m Security group open to 0.0.0.0/0 on RDP (3389)  (CIS AWS 5.3)
+   samples\main.tf:41 (risk=88, service=EC2)
+   > from_port   = 3389
+   ↳ Restrict RDP to specific bastion/VPN CIDRs.
+
+[91m[CRITICAL][0m Security group allows all traffic (0-65535) from internet  (CIS AWS 5.2)
+   samples\main.tf:48 (risk=88, service=EC2)
+   > from_port   = 0
+   ↳ Explicit allow-list of ports and source CIDRs only.
+
+[91m[CRITICAL][0m RDS instance publicly accessible  (CIS AWS 2.3.3)
+   samples\main.tf:61 (risk=88, service=RDS)
+   > publicly_accessible    = true
+   ↳ Set publicly_accessible = false. Use VPC peering or bastion to reach DB.
+
+[93m[HIGH][0m IAM policy with wildcard Action (*)  (CIS AWS 1.16)
+   samples\iam_policy.json:7 (risk=70, service=IAM)
+   > "Action": "*",
+   ↳ Grant least privilege — specify exact actions (e.g. s3:GetObject).
+
+[93m[HIGH][0m IAM policy with wildcard Action (*)  (CIS AWS 1.16)
+   samples\iam_policy.json:13 (risk=70, service=IAM)
+   > "Action": "*",
+   ↳ Grant least privilege — specify exact actions (e.g. s3:GetObject).
+
+[93m[HIGH][0m S3 bucket without server-side encryption  (CIS AWS 2.1.1)
+   samples\main.tf:11 (risk=68, service=S3)
+   > resource "aws_s3_bucket" "prod_data" {
+   ↳ Add aws_s3_bucket_server_side_encryption_configuration with AES256 or KMS.
+
+[93m[HIGH][0m S3 bucket without server-side encryption  (CIS AWS 2.1.1)
+   samples\main.tf:23 (risk=68, service=S3)
+   > resource "aws_s3_bucket" "logs" {
+   ↳ Add aws_s3_bucket_server_side_encryption_configuration with AES256 or KMS.
+
+[93m[HIGH][0m RDS instance without storage encryption  (CIS AWS 2.3.1)
+   samples\main.tf:62 (risk=68, service=RDS)
+   > storage_encrypted      = false
+   ↳ Set storage_encrypted = true and specify kms_key_id.
+
+[93m[HIGH][0m CloudTrail not enabled / not multi-region  (CIS AWS 3.1)
+   samples\main.tf:77 (risk=68, service=CloudTrail)
+   > is_multi_region_trail         = false
+   ↳ Enable is_multi_region_trail = true and enable_logging = true.
+
+[93m[HIGH][0m CloudTrail not enabled / not multi-region  (CIS AWS 3.1)
+   samples\main.tf:78 (risk=68, service=CloudTrail)
+   > enable_logging                = false
+   ↳ Enable is_multi_region_trail = true and enable_logging = true.
+
+[93m[HIGH][0m EBS volume unencrypted  (CIS AWS 2.2.1)
+   samples\main.tf:67 (risk=68, service=EC2)
+   > resource "aws_ebs_volume" "data" {
+   ↳ Set encrypted = true (enable EBS encryption-by-default at the account level).
+
+[93m[HIGH][0m IAM user with AdministratorAccess attached  (CIS AWS 1.15)
+   samples\main.tf:94 (risk=68, service=IAM)
+   > policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+   ↳ Attach job-specific managed policies instead of AdministratorAccess.
+
+[93m[MEDIUM][0m S3 bucket versioning disabled  (CIS AWS 2.1.3)
+   samples\main.tf:15 (risk=43, service=S3)
+   > versioning {
+   ↳ Enable versioning to protect against accidental deletion.
+
+[93m[MEDIUM][0m VPC Flow Logs disabled  (CIS AWS 3.9)
+   samples\main.tf:100 (risk=43, service=VPC)
+   > enable_flow_log  = false
+   ↳ Enable VPC flow logs for all VPCs and ship to CloudWatch or S3.
+
+[93m[MEDIUM][0m KMS key rotation disabled  (CIS AWS 3.8)
+   samples\main.tf:84 (risk=43, service=KMS)
+   > enable_key_rotation = false
+   ↳ Set enable_key_rotation = true for customer-managed KMS keys.
+
+[+] JSON report: reports/cloud_report.json
+[+] HTML report: reports/cloud_report.html
